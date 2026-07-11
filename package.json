@@ -1,0 +1,56 @@
+{
+  "name": "treasury-fiscaldata",
+  "version": "1.0.0",
+  "description": "Typed, zero-dependency client for the US Treasury FiscalData API — Debt to the Penny, average interest rates, exchange rates, and any endpoint with typed pagination, sorting, and filtering. No API key required.",
+  "keywords": [
+    "treasury",
+    "fiscaldata",
+    "fiscal-data",
+    "debt-to-the-penny",
+    "national-debt",
+    "government-data",
+    "interest-rates",
+    "exchange-rates",
+    "finance",
+    "api-client",
+    "fixed-income"
+  ],
+  "homepage": "https://moshemalka.com",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/moshejs/treasury-fiscaldata.git"
+  },
+  "bugs": "https://github.com/moshejs/treasury-fiscaldata/issues",
+  "author": "Moshe Malka <hello@moshemalka.com> (https://moshemalka.com)",
+  "license": "MIT",
+  "type": "module",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "sideEffects": false,
+  "scripts": {
+    "build": "tsup src/index.ts --format esm,cjs --dts --clean",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit",
+    "smoke": "node scripts/smoke.mjs",
+    "prepublishOnly": "npm run typecheck && npm run test && npm run build"
+  },
+  "devDependencies": {
+    "tsup": "^8.5.0",
+    "typescript": "^5.8.0",
+    "vitest": "^3.2.0"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
