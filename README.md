@@ -13,10 +13,10 @@ FiscalData is the Treasury's clean, documented API for federal financial data �
 This is the sibling of [`treasurydirect`](https://github.com/moshejs/treasurydirect) — a *different* Treasury API. TreasuryDirect is auctions and securities; FiscalData is accounting and debt.
 
 ```ts
-import { latestDebt, debtToPenny, avgInterestRates, query } from "treasury-fiscaldata";
+import { latestDebt, debtToPenny, avgInterestRates, num, query } from "treasury-fiscaldata";
 
 const debt = await latestDebt();
-Number(debt.tot_pub_debt_out_amt);  // 39_414_179_016_130.09
+num(debt.tot_pub_debt_out_amt);  // 39_414_179_016_130.09
 
 // A date range, with the two-condition filter handled for you:
 const history = await debtToPenny({ startDate: "2026-07-01", endDate: "2026-07-08" });
@@ -31,15 +31,18 @@ const rates = await query("v2/accounting/od/avg_interest_rates", {
 
 ## API
 
-Every function takes an optional final `options`: `{ fetch?, baseUrl? }` (inject `fetch` for tests/proxies).
+Every function takes an optional final `options`: `{ fetch?, baseUrl?, timeoutMs?, signal? }` (inject `fetch` for tests/proxies; `timeoutMs`/`signal` abort the request — no timeout by default).
 
-- **`query(endpoint, params?)`** — any endpoint (path after `/services/api/fiscal_service/`). `params`: `fields`, `filter`, `sort`, `pageNumber`, `pageSize`. Returns `{ data, meta, links }`.
-- **`queryAll(endpoint, params?)`** — async generator that follows pagination and yields every row. Narrow with `filter` first — some endpoints have millions of rows.
-- **`latestDebt()`** / **`debtToPenny({ startDate, endDate })`** — Debt to the Penny.
-- **`avgInterestRates()`** — average interest rates on Treasury securities.
-- **`exchangeRates(params?)`** — Treasury reporting rates of exchange.
+- **`query(endpoint, params?)`** — any endpoint (path after `/services/api/fiscal_service/`). `params`: `fields`, `filter`, `sort`, `pageNumber`, `pageSize` (1–10000; the API's default is 100). Returns one page: `{ data, meta, links }`.
+- **`queryAll(endpoint, params?)`** — async generator that walks every page (1000 rows per request unless you set `pageSize`) and yields each row. Narrow with `filter` first — some endpoints have millions of rows.
+- **`latestDebt()`** / **`debtToPenny({ startDate, endDate })`** — Debt to the Penny (from 1993-04-01). `debtToPenny` fetches every page, oldest first.
+- **`avgInterestRates({ recordDate? })`** — average interest rates on Treasury securities for the latest month (or the given month-end `recordDate`), one row per security type.
+- **`exchangeRates(params?)`** — Treasury reporting rates of exchange, newest first. Quarterly, ~165 currencies per quarter, so the default 100-row page is a partial quarter: filter on `record_date` for a full set.
+- **`num(value)`** — FiscalData returns **every value as a string** and missing values as the string `"null"`; `num` converts to `number | null` (`num("null")` → `null`). E.g. `debt_held_public_amt` is `"null"` before 2005-03-31.
 
-**Filters** come in two forms: a record `{ field: ">=value" }` (leading operators `>= <= > < =` are translated; bare value means equality — one condition per field), or a raw string array `["record_date:gte:2020-01-01", "record_date:lte:2020-12-31"]` when you need two conditions on one field. Failures throw `FiscalDataError` with `status` and `url`.
+**Filters** come in two forms: a record `{ field: ">=value" }` (leading operators `>= <= > < =` are translated; bare value means equality; an array means any-of, `in:(a,b)` — one condition per field), or a raw string array `["record_date:gte:2020-01-01", "record_date:lte:2020-12-31"]` when you need two conditions on one field.
+
+**Errors**: non-2xx responses throw `FiscalDataError` with `status`, `url`, and the API's own explanation in the message when it gives one (e.g. `Field 'bogus' does not exist`). Non-JSON bodies and responses without a `data` array also throw `FiscalDataError`. Invalid arguments (page params, impossible dates, reversed ranges) throw `RangeError`.
 
 The mocked test suite runs offline; `npm run smoke` exercises the live API.
 
