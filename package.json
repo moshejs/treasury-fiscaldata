@@ -1,6 +1,6 @@
 {
   "name": "treasury-fiscaldata",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Typed, zero-dependency client for the US Treasury FiscalData API — Debt to the Penny, average interest rates, exchange rates, and any endpoint with typed pagination, sorting, and filtering. No API key required.",
   "keywords": [
     "treasury",
